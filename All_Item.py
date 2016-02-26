@@ -19,9 +19,9 @@ def get_yahoo_title():
     for site_list in zone.select(".site-list"):
       sub_title     = site_list.a.string
       sub_title_url = YAHOO_BASE_URL + site_list.a.get('href') 
+      get_yahoo_category(sub_title_url)
 
 def get_yahoo_category(yahoo_cate_url):
-  yahoo_cate_url = 'https://tw.buy.yahoo.com/?sub=114'
   yahoo_resp = requests.get(yahoo_cate_url)
   yahoo_resp.encoding = "utf-8"
   soup = BeautifulSoup(yahoo_resp.text, "lxml")
@@ -32,29 +32,51 @@ def get_yahoo_category(yahoo_cate_url):
       stitle     = cate_stitle.get_text().strip("\r\n ")
       try:
         stitle_url = cate_stitle.a.get('href')
-        print("%s %s" %(stitle, stitle_url))
+        # print("%s %s" %(stitle, stitle_url))
       except:
-        print("%s" %(stitle))
+        # print("%s" %(stitle))
         break
 
     for cate_list in site_list.select(".list"):
-      cate_name = cate_list.a.get_text()
-      cate_url  = cate_list.a.get('href')
-      print(" |- %s %s" %(cate_name, cate_url))
+      print(cate_list)
+      # cate_name = cate_list.a.get_text()
+      # cate_url  = YAHOO_BASE_URL + cate_list.a.get('href')
+      # print(cate_name)
+      # print(cate_url)
+      # get_yahoo_item(cate_url)
+
+def has_class_but_id_null(tag):
+  return tag['class'] == ".list" #and tag['id'] != ""
 
 def get_yahoo_item(yahoo_cate_item_url):
-  yahoo_cate_item_url = 'https://tw.buy.yahoo.com/?catitemid=97524'
-  # page_dict = get_paging_dict(yahoo_cate_item_url)
 
+  #
+  # Get recommend products
+  #
   yahoo_resp = requests.get(yahoo_cate_item_url )
   yahoo_resp.encoding = "utf-8"
   soup = BeautifulSoup(yahoo_resp.text, "lxml")
-  for recommend_item in soup.find_all("div", attrs = {'class' : re.compile('pdlsit-main')}):
-    rec_item_name = recommend_item.select(".name")
-    print(rec_item_name.a)
-    # rec_item_url  = recommend_item.a.get('href')
-    # print("%s %s" %(rec_item_name, rec_item_url))
-  
+  recommend_item = soup.find("div", attrs = {'id' : 'cl-recproduct'})
+
+  for rec_item in recommend_item.select(".name"):
+    rec_item_name = rec_item.string
+    rec_item_link = rec_item.a.get('href')
+    get_detail_item_info(rec_item_link)
+
+  #
+  # get group products
+  # 
+  page_dict = get_paging_dict(yahoo_cate_item_url)
+  for page, link in page_dict['paging'].items():
+    yahoo_resp = requests.get(link)
+    yahoo_resp.encoding = "utf-8"
+    soup = BeautifulSoup(yahoo_resp.text, "lxml")
+    group_product = soup.find("div", attrs = {'id' : 'cl-gproduct'})
+    for item in group_product.select(".name"):
+      item_name = item.string
+      item_link = item.a.get('href')
+      get_detail_item_info(item_link)
+
 def get_paging_dict(yahoo_cate_item_url):
   yahoo_resp = requests.get(yahoo_cate_item_url )
   yahoo_resp.encoding = "utf-8"
@@ -74,23 +96,36 @@ def get_paging_dict(yahoo_cate_item_url):
 
   return page_dict
 
-    
-    
 def get_detail_item_info(yahoo_item_url):
   item_resp = requests.get(yahoo_item_url)
   item_resp.encoding = 'utf-8'
   soup = BeautifulSoup(item_resp.text, "lxml")
+  item_spec = soup.find(class_ = "item-spec")
 
-  item_spec = soup.find(class_ = re.compile("item-spec"))
-  subtitle       = item_spec.find(class_ = "subtitle").string
-  title          = item_spec.find(class_ = "title").text + subtitle
-  item_desc_list = item_spec.find(class_ = re.compile("desc-list")).text.strip("\r\n ").split("\n")
-  suggest_price  = item_spec.find(class_ = "suggest").text.strip("\r\n ")
-  special_price  = "特價" + item_spec.find(class_ = "priceinfo").text.strip("\r\n ")
+  subtitle       = item_spec.select(".subtitle")
+  if(len(subtitle)):
+    subtitle     = subtitle[0].get_text()
+  else:
+    subtitle     = ""
+
+  title          = item_spec.select(".title")[0].get_text()
+  item_desc      = item_spec.select(".desc-list")[0].get_text().strip()
+  suggest_price  = item_spec.select(".suggest")[0].get_text()
+  special_price  = "特價" + item_spec.select(".priceinfo")[0].get_text().strip()
+
+
+  print(yahoo_item_url)
+  print(subtitle)
+  print(title)
+  print(item_desc)
+  print(suggest_price)
+  print(special_price)
+
+  print("\n")
+
 
 
 def main():
-  get_yahoo_item('123')
-
+  get_yahoo_title()
 
 main()

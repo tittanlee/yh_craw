@@ -7,8 +7,8 @@ from bs4 import BeautifulSoup
 
 YAHOO_BASE_URL = 'https://tw.buy.yahoo.com'
 
-def get_yahoo_title():
-  yahoo_request_url = "https://tw.buy.yahoo.com/help/helper.asp?p=sitemap"
+def get_yahoo_title(all_products_category_url):
+  yahoo_request_url = all_products_category_url
   yahoo_resp = requests.get(yahoo_request_url)
   yahoo_resp.encoding='big5'
   soup = BeautifulSoup(yahoo_resp.text, "lxml")
@@ -28,6 +28,9 @@ def get_yahoo_category(yahoo_cate_url):
   cate_menu = soup.find("div", attrs = {'id' : 'cl-menucate'})
   stitle_url = ""
   for site_list in cate_menu.find_all(attrs = {'class' :"sitelist"}):
+    if (site_list['id'] == ""):
+      continue
+
     for cate_stitle in site_list.select(".stitle"):
       stitle     = cate_stitle.get_text().strip("\r\n ")
       try:
@@ -36,17 +39,11 @@ def get_yahoo_category(yahoo_cate_url):
       except:
         # print("%s" %(stitle))
         break
-
+    
     for cate_list in site_list.select(".list"):
-      print(cate_list)
-      # cate_name = cate_list.a.get_text()
-      # cate_url  = YAHOO_BASE_URL + cate_list.a.get('href')
-      # print(cate_name)
-      # print(cate_url)
-      # get_yahoo_item(cate_url)
-
-def has_class_but_id_null(tag):
-  return tag['class'] == ".list" #and tag['id'] != ""
+      cate_name = cate_list.a.get_text()
+      cate_url  = YAHOO_BASE_URL + cate_list.a.get('href')
+      get_yahoo_item(cate_url)
 
 def get_yahoo_item(yahoo_cate_item_url):
 
@@ -61,7 +58,8 @@ def get_yahoo_item(yahoo_cate_item_url):
   for rec_item in recommend_item.select(".name"):
     rec_item_name = rec_item.string
     rec_item_link = rec_item.a.get('href')
-    get_detail_item_info(rec_item_link)
+    print(rec_item_link)
+    # get_detail_item_info(rec_item_link)
 
   #
   # get group products
@@ -75,7 +73,8 @@ def get_yahoo_item(yahoo_cate_item_url):
     for item in group_product.select(".name"):
       item_name = item.string
       item_link = item.a.get('href')
-      get_detail_item_info(item_link)
+      print(item_link)
+      # get_detail_item_info(item_link)
 
 def get_paging_dict(yahoo_cate_item_url):
   yahoo_resp = requests.get(yahoo_cate_item_url )
@@ -126,6 +125,7 @@ def get_detail_item_info(yahoo_item_url):
 
 
 def main():
-  get_yahoo_title()
+  all_cate_url = 'https://tw.buy.yahoo.com/help/helper.asp?p=sitemap'
+  get_yahoo_title(all_cate_url)
 
 main()

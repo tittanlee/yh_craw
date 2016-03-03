@@ -73,7 +73,6 @@ class YhCraw():
     return result
 
   def get_yahoo_item(self, yahoo_cate_item_url):
-
     #
     # Get recommend products
     #
@@ -81,17 +80,20 @@ class YhCraw():
     yahoo_resp.encoding = "utf-8"
     soup = BeautifulSoup(yahoo_resp.text, "lxml")
     recommend_item = soup.find("div", attrs = {'id' : 'cl-recproduct'})
+    result = list()
 
     for rec_item in recommend_item.select(".name"):
       rec_item_name = rec_item.string
       rec_item_link = rec_item.a.get('href')
-      print(rec_item_link)
-      # get_detail_item_info(rec_item_link)
+      result.append({'name':rec_item_name, 'link':rec_item_link})
+
+    page_dict = self.get_paging_dict(yahoo_cate_item_url)
+    if(len(page_dict['paging']) == 0):
+      return result
 
     #
     # get group products
     # 
-    page_dict = self.get_paging_dict(yahoo_cate_item_url)
     for page, link in page_dict['paging'].items():
       yahoo_resp = requests.get(link)
       yahoo_resp.encoding = "utf-8"
@@ -100,8 +102,9 @@ class YhCraw():
       for item in group_product.select(".name"):
         item_name = item.string
         item_link = item.a.get('href')
-        print(item_link)
-        # get_detail_item_info(item_link)
+        result.append({'name':item_name, 'link':item_link})
+
+    return result
 
   def get_paging_dict(self, yahoo_cate_item_url):
     yahoo_resp = requests.get(yahoo_cate_item_url )
